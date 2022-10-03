@@ -5,7 +5,7 @@ const PORT = 8080; // default port 8080
 
 app.set('view engine', 'ejs')
 
-const urlDatabase = {
+const urlDB = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
@@ -28,8 +28,13 @@ app.get('/about', (req, res) => {
   res.render('pages/about');
 });
 
-app.get('/urls.json', (req, res) => {
-  res.json(urlDatabase);
+app.get('/urls', (req, res) => {
+  res.render('pages/urls', { urlDB });
+});
+
+app.get('/urls/:id', (req, res) => {
+  const param = req.params.id;
+  res.render('pages/url_id', { urlDB, param });
 });
 
 app.listen(PORT, () => {

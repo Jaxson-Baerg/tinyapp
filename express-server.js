@@ -11,6 +11,10 @@ app.get("/", (req, res) => {
   res.send(`Hello User:${Math.floor(Math.random() * 10000)}!`);
 });
 
+app.get("/urls.json", (req, res) => {
+  res.json(urlDatabase);
+});
+
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });

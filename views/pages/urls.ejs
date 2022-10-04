@@ -23,23 +23,31 @@
   <body class="container">
     <main class="jumbotron">
       <h3 style="display: inline-block;">My URLs</h3>
-      <a href="/urls/new" class="btn bg-success" style="position: relative; left: 70%; margin-right: 10%;">New URL</a>
+      <a href="/urls/new" class="btn bg-success" style="float: right;">New URL</a>
+      <% if (Object.keys(urlDB).length > 0) { %>
       <table class="table">
         <thead>
           <tr>
             <th scope="col">Short URL ID</th>
             <th scope="col">Long URL</th>
+            <th scope="col">Delete</th>
           </tr>
         </thead>
         <tbody>
           <% for (let id in urlDB) { %>
             <tr>
-              <td><a href=<%- urlDB[id] %>><%= id %></a></td>
+              <form action=<%- `/urls/${id}/delete` %> method="POST">
+              <td><a href=<%- urlDB[id] %> name="urlID"><%= id %></a></td>
               <td><%= urlDB[id] %></td>
+              <td><button type="submit" class="btn btn-danger">Delete</button></td>
+              </form>
             </tr>
           <% } %>
         </tbody>
       </table>
+      <% } else { %>
+      <h5>No Shortened URLs Created Yet!</h5>
+      <% } %>
     </main>
     <!-- Bootstrap JS -->
     <!-- <script

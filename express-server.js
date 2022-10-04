@@ -68,8 +68,16 @@ app.get('/urls', (req, res) => {
 
 app.post('/urls', (req, res) => {
   urlDB[generateRandomString()] = req.body.longURL;
-  writeDatabase(urlDB);
-  res.redirect('/urls');
+  writeDatabase(urlDB).then(() => {
+    res.redirect('/urls');
+  });
+});
+
+app.post('/urls/:id/delete', (req, res) => {
+  delete urlDB[req.params.id];
+  writeDatabase(urlDB).then(() => {
+    res.redirect('/urls');
+  });
 });
 
 app.get('/urls/new', (req, res) => {
@@ -81,6 +89,17 @@ app.get('/urls/:id', (req, res) => {
   getDatabase().then((content) => {
     urlDB = content;
     res.render('pages/url_id', { urlDB, param });
+  });
+});
+
+app.get('/u/:id', (req, res) => {
+  getDatabase().then((content) => {
+    urlDB = content;
+    if (urlDB[req.params.id]) {
+      res.redirect(urlDB[req.params.id])
+    } else {
+      res.redirect('/urls');
+    }
   });
 });
 

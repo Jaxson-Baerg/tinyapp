@@ -62,6 +62,14 @@ app.get('/', (req, res) => {
   res.render('pages/index', templateVars);
 });
 
+app.get('/register', (req, res) => {
+  res.render('pages/register', templateVars);
+});
+
+app.post('/register', (req, res) => {
+  
+});
+
 app.get('/login', (req, res) => {
   res.render('pages/login', templateVars);
 });

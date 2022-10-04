@@ -67,16 +67,22 @@ app.get('/urls', (req, res) => {
 });
 
 app.post('/urls', (req, res) => {
-  urlDB[generateRandomString()] = req.body.longURL;
-  writeDatabase(urlDB).then(() => {
-    res.redirect('/urls');
+  getDatabase().then((content) => {
+    urlDB = content;
+    urlDB[generateRandomString()] = req.body.longURL;
+    writeDatabase(urlDB).then(() => {
+      res.redirect('/urls');
+    });
   });
 });
 
 app.post('/urls/:id/delete', (req, res) => {
-  delete urlDB[req.params.id];
-  writeDatabase(urlDB).then(() => {
-    res.redirect('/urls');
+  getDatabase().then((content) => {
+    urlDB = content;
+    delete urlDB[req.params.id];
+    writeDatabase(urlDB).then(() => {
+      res.redirect('/urls');
+    });
   });
 });
 
@@ -89,6 +95,18 @@ app.get('/urls/:id', (req, res) => {
   getDatabase().then((content) => {
     urlDB = content;
     res.render('pages/url_id', { urlDB, param });
+  });
+});
+
+app.post('/urls/:id', (req, res) => {
+  const param = req.params.id;
+  const urlParam = req.body.newURLLong;
+  getDatabase().then((content) => {
+    urlDB = content;
+    urlDB[param] = urlParam;
+    writeDatabase(urlDB).then(() => {
+      res.render('pages/url_id', { urlDB, param});
+    });
   });
 });
 

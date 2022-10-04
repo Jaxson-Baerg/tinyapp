@@ -30,17 +30,17 @@
           <tr>
             <th scope="col">Short URL ID</th>
             <th scope="col">Long URL</th>
+            <th scope="col">Edit</th>
             <th scope="col">Delete</th>
           </tr>
         </thead>
         <tbody>
           <% for (let id in urlDB) { %>
             <tr>
-              <form action=<%- `/urls/${id}/delete` %> method="POST">
               <td><a href=<%- urlDB[id] %> name="urlID"><%= id %></a></td>
               <td><%= urlDB[id] %></td>
-              <td><button type="submit" class="btn btn-danger">Delete</button></td>
-              </form>
+              <td><form action=<%- `/urls/${id}` %> method="GET"><button type="submit" class="btn btn-primary">Edit</button></form></td>
+              <td><form action=<%- `/urls/${id}/delete` %> method="POST"><button type="submit" class="btn btn-danger">Delete</button></form></td>
             </tr>
           <% } %>
         </tbody>

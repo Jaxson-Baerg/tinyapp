@@ -12,8 +12,17 @@
 <main>
   <div class="jumbotron">
     <h1>Single URL</h1>
-    <p>Your shortened URL for --> <strong><%= urlDB[param] %></strong></p>
-
+    <p>
+      Your shortened URL for --> 
+      <strong id="urlLong"><%= urlDB[param] %></strong>
+      <button id="urlLongEditButton" onclick="editURL()" class="btn" style="padding: 0; margin: 10px;">
+        <i class="fa fa-pen-to-square"></i>
+      </button>
+      <form id="urlLongEdit" action=<%- `/urls/${param}` %> method="POST" hidden>
+        <input name="newURLLong" value=<%- urlDB[param] %> size="35" maxlength="35">
+        <button type="submit"class="btn bg-success">Update</button>
+      </form>
+    </p>
     <a href=<%- urlDB[param] %>><strong><%= param %></strong></a>
   </div>
 </main>
@@ -21,6 +30,14 @@
 <footer>
   <%- include('../partials/footer'); %>
 </footer>
+
+<script>
+  const editURL = () => {
+    document.getElementById("urlLong").setAttribute("hidden", "true");
+    document.getElementById("urlLongEditButton").setAttribute("hidden", "true");
+    document.getElementById("urlLongEdit").removeAttribute("hidden");
+  };
+</script>
 
 </body>
 </html>

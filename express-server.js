@@ -10,6 +10,13 @@ app.use("/public/images", express.static('public/images'));
 app.use(express.urlencoded({ extended: true}));
 
 let urlDB;
+
+const templateVars = {
+  urlDB,
+  username: undefined,
+  password: undefined
+};
+
 const getDatabase = () => {
   return new Promise((resolve, reject) => {
     fs.readFile('./users/database.txt', (error, body) => {
@@ -49,20 +56,44 @@ app.get('/', (req, res) => {
   ];
   const tagline = "No programming concept is complete without a cute animal mascot!";
 
-  res.render('pages/index', {
-    mascots,
-    tagline
+  templateVars.mascots = mascots;
+  templateVars.tagline = tagline;
+
+  res.render('pages/index', templateVars);
+});
+
+app.get('/login', (req, res) => {
+  res.render('pages/login', templateVars);
+});
+
+app.post('/login', (req, res) => {
+  res.cookie('username', req.body.username);
+  res.cookie('password', req.body.password);
+  templateVars.username = req.body.username;
+  templateVars.password = req.body.password;
+  getDatabase().then((content) => {
+    urlDB = content;
+    res.redirect('/urls'); // Render user specific urls later
   });
 });
 
+app.get('/logout', (req, res) => {
+  res.clearCookie('username');
+  res.clearCookie('password');
+  templateVars.username = undefined;
+  templateVars.password = undefined;
+  res.redirect('/');
+});
+
 app.get('/about', (req, res) => {
-  res.render('pages/about');
+  res.render('pages/about', templateVars);
 });
 
 app.get('/urls', (req, res) => {
   getDatabase().then((content) => {
     urlDB = content;
-    res.render('pages/urls', { urlDB });
+    templateVars.urlDB = urlDB;
+    res.render('pages/urls', templateVars);
   });
 });
 
@@ -87,14 +118,16 @@ app.post('/urls/:id/delete', (req, res) => {
 });
 
 app.get('/urls/new', (req, res) => {
-  res.render('pages/url_new');
+  res.render('pages/url_new', templateVars);
 });
 
 app.get('/urls/:id', (req, res) => {
   const param = req.params.id;
   getDatabase().then((content) => {
     urlDB = content;
-    res.render('pages/url_id', { urlDB, param });
+    templateVars.urlDB = urlDB;
+    templateVars.param = param;
+    res.render('pages/url_id', templateVars);
   });
 });
 
@@ -105,7 +138,9 @@ app.post('/urls/:id', (req, res) => {
     urlDB = content;
     urlDB[param] = urlParam;
     writeDatabase(urlDB).then(() => {
-      res.render('pages/url_id', { urlDB, param});
+      templateVars.urlDB = urlDB;
+      templateVars.param = param;
+      res.render('pages/url_id', templateVars);
     });
   });
 });

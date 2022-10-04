@@ -10,6 +10,8 @@ const urlDB = {
   "9sm5xK": "http://www.google.com"
 };
 
+app.use("/public/images", express.static('public/images'));
+
 app.get('/', (req, res) => {
   const mascots = [
     { name: 'Sammy', organization: "DigitalOcean", birth_year: 2012},

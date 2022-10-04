@@ -12,9 +12,9 @@
 <main>
   <div class="jumbotron">
     <h1>Single URL</h1>
-    <p>Your shortened URL for <strong><%= urlDB[param] %></strong></p>
+    <p>Your shortened URL for --> <strong><%= urlDB[param] %></strong></p>
 
-    <h4><strong><%= param %></strong></h4>
+    <a href=<%- urlDB[param] %>><strong><%= param %></strong></a>
   </div>
 </main>
 

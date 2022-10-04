@@ -33,7 +33,7 @@
         <tbody>
           <% for (let id in urlDB) { %>
             <tr>
-              <td><%= id %></td>
+              <td><a href=<%- urlDB[id] %>><%= id %></a></td>
               <td><%= urlDB[id] %></td>
             </tr>
           <% } %>

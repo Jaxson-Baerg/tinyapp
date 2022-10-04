@@ -1,16 +1,45 @@
 const express = require('express');
 const morgan = require('morgan');
+// const fetch = require('whatwg-fetch');
+const fs = require('fs');
 const app = express();
 const PORT = 8080; // default port 8080
 
 app.set('view engine', 'ejs')
+app.use("/public/images", express.static('public/images'));
+app.use(express.urlencoded({ extended: true}));
 
-const urlDB = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+let urlDB;
+const getDatabase = () => {
+  return new Promise((resolve, reject) => {
+    fs.readFile('./users/database.txt', (error, body) => {
+      resolve(JSON.parse(body));
+    });
+  });
+};
+getDatabase().then((content) => {
+  urlDB = content;
+});
+
+const writeDatabase = (obj) => {
+  return new Promise((resolve, reject) => {
+    fs.writeFile('./users/database.txt', JSON.stringify(obj), (error) => {
+      if (!error) resolve();
+    });
+  });
 };
 
-app.use("/public/images", express.static('public/images'));
+// const validate = (url) => {
+//   fetch(url).then(() => {
+//     document.getElementById("newURL").submit();
+//   }).catch(() => {
+//     console.log("bad url");
+//   });
+// };
+
+const generateRandomString = () => {
+  return Math.floor((1 + Math.random()) * 0x1000000).toString(16).substring(1);
+}
 
 app.get('/', (req, res) => {
   const mascots = [
@@ -31,12 +60,28 @@ app.get('/about', (req, res) => {
 });
 
 app.get('/urls', (req, res) => {
-  res.render('pages/urls', { urlDB });
+  getDatabase().then((content) => {
+    urlDB = content;
+    res.render('pages/urls', { urlDB });
+  });
+});
+
+app.post('/urls', (req, res) => {
+  urlDB[generateRandomString()] = req.body.longURL;
+  writeDatabase(urlDB);
+  res.redirect('/urls');
+});
+
+app.get('/urls/new', (req, res) => {
+  res.render('pages/url_new');
 });
 
 app.get('/urls/:id', (req, res) => {
   const param = req.params.id;
-  res.render('pages/url_id', { urlDB, param });
+  getDatabase().then((content) => {
+    urlDB = content;
+    res.render('pages/url_id', { urlDB, param });
+  });
 });
 
 app.listen(PORT, () => {

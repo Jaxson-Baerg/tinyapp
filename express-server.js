@@ -72,7 +72,7 @@ app.post('/register', (req, res) => {
       res.cookie('password', req.body.password);
       templateVars.username = req.body.username;
       templateVars.password = req.body.username;
-      content[req.body.username] = { 'username': req.body.username, 'password': req.body.password, 'urls': {}};
+      content[req.body.username] = { 'id': Math.floor(Math.random() * 10000), 'username': req.body.username, 'password': req.body.password, 'urls': {}};
 
       writeDatabase(content).then(() => {
         res.redirect('/urls');

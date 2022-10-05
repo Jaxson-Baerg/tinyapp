@@ -59,29 +59,34 @@ app.get('/register', (req, res) => {
 });
 
 app.post('/register', (req, res) => {
-  getDatabase().then((content) => {
-    let userExists = false;
-    for (let user in content) {
-      if (content[user].username === req.body.username) {
-        userExists = true;
+  if (req.body.username === "") {
+    res.status(400);
+    res.send('Please enter an email.');
+  } else {
+    getDatabase().then((content) => {
+      let userExists = false;
+      for (let user in content) {
+        if (content[user].username === req.body.username) {
+          userExists = true;
+        }
       }
-    }
 
-    if (!userExists) {
-      res.cookie('username', req.body.username);
-      res.cookie('password', req.body.password);
-      templateVars.username = req.body.username;
-      templateVars.password = req.body.username;
-      content[req.body.username] = { 'id': Math.floor(Math.random() * 10000), 'username': req.body.username, 'password': req.body.password, 'urls': {}};
+      if (!userExists) {
+        res.cookie('username', req.body.username);
+        res.cookie('password', req.body.password);
+        templateVars.username = req.body.username;
+        templateVars.password = req.body.username;
+        content[req.body.username] = { 'id': Math.floor(Math.random() * 10000), 'username': req.body.username, 'password': req.body.password, 'urls': {}};
 
-      writeDatabase(content).then(() => {
-        res.redirect('/urls');
-      });
-    } else {
-      console.log(`User already exists!\n${req.body.username}`);
-      res.redirect('/register');
-    }
-  });
+        writeDatabase(content).then(() => {
+          res.redirect('/urls');
+        });
+      } else {
+        console.log(`User already exists!\n${req.body.username}`);
+        res.redirect('/register');
+      }
+    });
+  }
 });
 
 app.get('/login', (req, res) => {

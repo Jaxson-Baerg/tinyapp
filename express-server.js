@@ -94,20 +94,25 @@ app.get('/login', (req, res) => {
 });
 
 app.post('/login', (req, res) => {
-  getDatabase().then((content) => {
-    if (req.body.password === content[req.body.username].password) {
-      res.cookie('username', req.body.username);
-      res.cookie('password', req.body.password);
-      templateVars.username = req.body.username;
-      templateVars.password = req.body.password;
+  if (req.body.username === "" || req.body.password === "") {
+    res.status(400);
+    res.send('Please enter a valid email or password');
+  } else {
+    getDatabase().then((content) => {
+      if (req.body.password === content[req.body.username].password) {
+        res.cookie('username', req.body.username);
+        res.cookie('password', req.body.password);
+        templateVars.username = req.body.username;
+        templateVars.password = req.body.password;
 
-      urlDB = content[templateVars.username].urls;
-      res.redirect('/urls');
-    } else {
-      console.log(`Incorrect login!\n${req.body.password} !== ${content[req.body.username].password}`);
-      res.redirect('/login');
-    }
-  });
+        urlDB = content[templateVars.username].urls;
+        res.redirect('/urls');
+      } else {
+        console.log(`Incorrect login!\n${req.body.password} !== ${content[req.body.username].password}`);
+        res.redirect('/login');
+      }
+    });
+  }
 });
 
 app.get('/logout', (req, res) => {

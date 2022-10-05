@@ -219,4 +219,8 @@ app.get('/u/:id', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Tiny App Server listening on port ${PORT}!`);
+  getDatabase().then((content) => {
+    content.default.urls = { "vj3k2l": "https://www.google.ca" };
+    writeDatabase(content);
+  });
 });

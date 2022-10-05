@@ -73,7 +73,7 @@ app.post('/register', (req, res) => {
 
       if (!userExists) {
         res.cookie('username', req.body.username);
-        res.cookie('password', req.body.password);
+        //res.cookie('password', req.body.password);
         templateVars.username = req.body.username;
         templateVars.password = req.body.username;
         content[req.body.username] = { 'id': Math.floor(Math.random() * 10000), 'username': req.body.username, 'password': req.body.password, 'urls': {}};
@@ -82,6 +82,7 @@ app.post('/register', (req, res) => {
           res.redirect('/urls');
         });
       } else {
+        res.status(403);
         console.log(`User already exists!\n${req.body.username}`);
         res.redirect('/register');
       }
@@ -100,8 +101,8 @@ app.post('/login', (req, res) => {
   } else {
     getDatabase().then((content) => {
       if (req.body.password === content[req.body.username].password) {
-        res.cookie('username', req.body.username);
-        res.cookie('password', req.body.password);
+        res.cookie('user_id', content[req.body.username].id);
+        //res.cookie('password', req.body.password);
         templateVars.username = req.body.username;
         templateVars.password = req.body.password;
 
@@ -109,6 +110,7 @@ app.post('/login', (req, res) => {
         res.redirect('/urls');
       } else {
         console.log(`Incorrect login!\n${req.body.password} !== ${content[req.body.username].password}`);
+        res.status(403);
         res.redirect('/login');
       }
     });
@@ -116,8 +118,8 @@ app.post('/login', (req, res) => {
 });
 
 app.get('/logout', (req, res) => {
-  res.clearCookie('username');
-  res.clearCookie('password');
+  res.clearCookie('user_id');
+  //res.clearCookie('password');
   templateVars.username = "default";
   templateVars.password = "default";
   res.redirect('/');

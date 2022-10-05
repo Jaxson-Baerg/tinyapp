@@ -55,7 +55,11 @@ app.get('/', (req, res) => {
 });
 
 app.get('/register', (req, res) => {
-  res.render('pages/register', templateVars);
+  if (templateVars.username === "default") {
+    res.render('pages/register', templateVars);
+  } else {
+    res.redirect('/urls');
+  }
 });
 
 app.post('/register', (req, res) => {
@@ -91,7 +95,11 @@ app.post('/register', (req, res) => {
 });
 
 app.get('/login', (req, res) => {
-  res.render('pages/login', templateVars);
+  if (templateVars.username === "default") {
+    res.render('pages/login', templateVars);
+  } else {
+    res.redirect('/urls');
+  }
 });
 
 app.post('/login', (req, res) => {
@@ -191,10 +199,19 @@ app.post('/urls/:id', (req, res) => {
 
 app.get('/u/:id', (req, res) => {
   getDatabase().then((content) => {
-    urlDB = content[templateVars.username].urls;
-    if (urlDB[req.params.id]) {
-      res.redirect(urlDB[req.params.id]);
-    } else {
+    // urlDB = content[templateVars.username].urls;
+    let idExists = true;
+    for (user in content) {
+      if (content[user].urls[req.params.id]) {
+        res.redirect(content[user].urls[req.params.id]);
+        idExists = true;
+        break;
+      } else {
+        idExists = false;
+      }
+    }
+
+    if (!idExists) {
       res.redirect('/urls');
     }
   });

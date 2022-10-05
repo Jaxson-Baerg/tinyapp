@@ -5,7 +5,9 @@ const fs = require('fs');
 const app = express();
 const PORT = 8080; // default port 8080
 
-app.set('view engine', 'ejs')
+app.set('view engine', 'ejs');
+// app.use(express.static(__dirname + '/public'));
+// app.set('content-type', 'application/javascript');
 app.use("/public/images", express.static('public/images'));
 app.use(express.urlencoded({ extended: true}));
 
@@ -13,8 +15,8 @@ let urlDB;
 
 const templateVars = {
   urlDB,
-  username: undefined,
-  password: undefined
+  username: "default",
+  password: "default",
 };
 
 const getDatabase = () => {
@@ -49,16 +51,6 @@ const generateRandomString = () => {
 }
 
 app.get('/', (req, res) => {
-  const mascots = [
-    { name: 'Sammy', organization: "DigitalOcean", birth_year: 2012},
-    { name: 'Tux', organization: "Linux", birth_year: 1996},
-    { name: 'Moby Dock', organization: "Docker", birth_year: 2013}
-  ];
-  const tagline = "No programming concept is complete without a cute animal mascot!";
-
-  templateVars.mascots = mascots;
-  templateVars.tagline = tagline;
-
   res.render('pages/index', templateVars);
 });
 
@@ -67,7 +59,29 @@ app.get('/register', (req, res) => {
 });
 
 app.post('/register', (req, res) => {
-  
+  getDatabase().then((content) => {
+    let userExists = false;
+    for (let user in content) {
+      if (content[user].username === req.body.username) {
+        userExists = true;
+      }
+    }
+
+    if (!userExists) {
+      res.cookie('username', req.body.username);
+      res.cookie('password', req.body.password);
+      templateVars.username = req.body.username;
+      templateVars.password = req.body.username;
+      content[req.body.username] = { 'username': req.body.username, 'password': req.body.password, 'urls': {}};
+
+      writeDatabase(content).then(() => {
+        res.redirect('/urls');
+      });
+    } else {
+      console.log(`User already exists!\n${req.body.username}`);
+      res.redirect('/register');
+    }
+  });
 });
 
 app.get('/login', (req, res) => {
@@ -75,21 +89,27 @@ app.get('/login', (req, res) => {
 });
 
 app.post('/login', (req, res) => {
-  res.cookie('username', req.body.username);
-  res.cookie('password', req.body.password);
-  templateVars.username = req.body.username;
-  templateVars.password = req.body.password;
   getDatabase().then((content) => {
-    urlDB = content;
-    res.redirect('/urls'); // Render user specific urls later
+    if (req.body.password === content[req.body.username].password) {
+      res.cookie('username', req.body.username);
+      res.cookie('password', req.body.password);
+      templateVars.username = req.body.username;
+      templateVars.password = req.body.password;
+
+      urlDB = content[templateVars.username].urls;
+      res.redirect('/urls');
+    } else {
+      console.log(`Incorrect login!\n${req.body.password} !== ${content[req.body.username].password}`);
+      res.redirect('/login');
+    }
   });
 });
 
 app.get('/logout', (req, res) => {
   res.clearCookie('username');
   res.clearCookie('password');
-  templateVars.username = undefined;
-  templateVars.password = undefined;
+  templateVars.username = "default";
+  templateVars.password = "default";
   res.redirect('/');
 });
 
@@ -99,7 +119,7 @@ app.get('/about', (req, res) => {
 
 app.get('/urls', (req, res) => {
   getDatabase().then((content) => {
-    urlDB = content;
+    urlDB = content[templateVars.username].urls;
     templateVars.urlDB = urlDB;
     res.render('pages/urls', templateVars);
   });
@@ -107,9 +127,12 @@ app.get('/urls', (req, res) => {
 
 app.post('/urls', (req, res) => {
   getDatabase().then((content) => {
-    urlDB = content;
+    // templateVars.username === "default" ? urlDB = content.default.urls : urlDB = content[templateVars.username].urls;
+    urlDB = content[templateVars.username].urls;
     urlDB[generateRandomString()] = req.body.longURL;
-    writeDatabase(urlDB).then(() => {
+    content[templateVars.username].urls = urlDB;
+
+    writeDatabase(content).then(() => {
       res.redirect('/urls');
     });
   });
@@ -117,9 +140,9 @@ app.post('/urls', (req, res) => {
 
 app.post('/urls/:id/delete', (req, res) => {
   getDatabase().then((content) => {
-    urlDB = content;
-    delete urlDB[req.params.id];
-    writeDatabase(urlDB).then(() => {
+    delete content[templateVars.username].urls[req.params.id];
+
+    writeDatabase(content).then(() => {
       res.redirect('/urls');
     });
   });
@@ -132,7 +155,7 @@ app.get('/urls/new', (req, res) => {
 app.get('/urls/:id', (req, res) => {
   const param = req.params.id;
   getDatabase().then((content) => {
-    urlDB = content;
+    urlDB = content[templateVars.username].urls;
     templateVars.urlDB = urlDB;
     templateVars.param = param;
     res.render('pages/url_id', templateVars);
@@ -143,9 +166,10 @@ app.post('/urls/:id', (req, res) => {
   const param = req.params.id;
   const urlParam = req.body.newURLLong;
   getDatabase().then((content) => {
-    urlDB = content;
+    urlDB = content[templateVars.username].urls;
     urlDB[param] = urlParam;
-    writeDatabase(urlDB).then(() => {
+    content[templateVars.username].urls = urlDB;
+    writeDatabase(content).then(() => {
       templateVars.urlDB = urlDB;
       templateVars.param = param;
       res.render('pages/url_id', templateVars);
@@ -155,9 +179,9 @@ app.post('/urls/:id', (req, res) => {
 
 app.get('/u/:id', (req, res) => {
   getDatabase().then((content) => {
-    urlDB = content;
+    urlDB = content[templateVars.username].urls;
     if (urlDB[req.params.id]) {
-      res.redirect(urlDB[req.params.id])
+      res.redirect(urlDB[req.params.id]);
     } else {
       res.redirect('/urls');
     }
@@ -165,5 +189,5 @@ app.get('/u/:id', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
+  console.log(`Tiny App Server listening on port ${PORT}!`);
 });

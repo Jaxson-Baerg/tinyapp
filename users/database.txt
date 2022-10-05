@@ -1,1 +1,1 @@
-{"b2xVn2":"http://www.lighthouselabs.ca","9sm5xK":"http://www.google.com"}
+{"a@b.com":{"username":"a@b.com","password":"1234","urls":{"g43s5d":"http://lighthouselabs.ca","jhu2js":"https://google.ca"}},"b@c.com":{"username":"b@c.com","password":"4321","urls":{"g5s42g":"https://www.youtube.ca"}},"default":{"username":"default","password":"default","urls":{"vj3k2l":"https://www.google.ca"}},"bob@cat.com":{"username":"bob@cat.com","password":"999","urls":{"cdd0fe":"http://www.duckduckgo.com"}}}

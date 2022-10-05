@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <%- include('../partials/head'); %>
+  <!-- <script type="application/javascript" src="client.js"></script> -->
 </head>
 <body class="container">
 
@@ -14,18 +15,20 @@
 <main>
   <div class="jumbotron">
     <h2>Sign In</h2>
-    <form action="/login" method="POST">
+
+    <h4 id="badLoginHeader" class="text-warning" hidden>Incorrect Login Information</h4>
+    <form id="loginInput" action="/login" method="POST">
       <div>
         <div>
-          <label for="username">Username</label>
+          <label for="usernameInput">Username</label>
           <div>
-            <input id="username" name="username" placeholder="example@address.com">
+            <input id="usernameInput" name="username" placeholder="example@address.com">
           </div>
         </div>
         <div>
-          <label for="password">Password</label>
+          <label for="passwordInput">Password</label>
           <div>
-            <input type="password" id="password" name="password">
+            <input type="passwordInput" id="password" name="password">
           </div>
         </div>
       </div>

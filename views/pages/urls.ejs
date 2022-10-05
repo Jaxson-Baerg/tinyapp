@@ -3,18 +3,6 @@
   <head>
     <meta charset="utf-8" />
     <%- include('../partials/head'); %>
-    <!-- <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, shrink-to-fit=no"
-    /> -->
-
-    <!-- Bootstrap CSS -->
-    <!-- <link
-      rel="stylesheet"
-      href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css"
-      integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS"
-      crossorigin="anonymous"
-    /> -->
     <title>TinyApp</title>
   </head>
   <header>
@@ -25,7 +13,7 @@
       <h3 style="display: inline-block;">My URLs</h3>
       <a href="/urls/new" class="btn bg-success" style="float: right;">New URL</a>
       <% if (Object.keys(urlDB).length > 0) { %>
-      <table class="table">
+      <table class="table table-dark">
         <thead>
           <tr>
             <th scope="col">Short URL ID</th>

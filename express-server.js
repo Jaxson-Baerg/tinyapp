@@ -59,9 +59,9 @@ app.get('/register', (req, res) => {
 });
 
 app.post('/register', (req, res) => {
-  if (req.body.username === "") {
+  if (req.body.username === "" || req.body.password === "") {
     res.status(400);
-    res.send('Please enter an email.');
+    res.send('Please enter a valid email or password.');
   } else {
     getDatabase().then((content) => {
       let userExists = false;

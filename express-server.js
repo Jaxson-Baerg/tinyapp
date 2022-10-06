@@ -1,13 +1,12 @@
 const express = require('express');
+const bcrypt = require('bcrypt');
 const morgan = require('morgan');
-// const fetch = require('whatwg-fetch');
 const fs = require('fs');
+
 const app = express();
 const PORT = 8080; // default port 8080
 
 app.set('view engine', 'ejs');
-// app.use(express.static(__dirname + '/public'));
-// app.set('content-type', 'application/javascript');
 app.use("/public/images", express.static('public/images'));
 app.use(express.urlencoded({ extended: true}));
 
@@ -38,13 +37,17 @@ const writeDatabase = (obj) => {
   });
 };
 
-// const validate = (url) => {
-//   fetch(url).then(() => {
-//     document.getElementById("newURL").submit();
-//   }).catch(() => {
-//     console.log("bad url");
-//   });
-// };
+const hashString = (str) => {
+  let hash = 0,
+    i, char;
+  if (str.length === 0) return hash;
+  for (i = 0; i < str.length; i++) {
+    char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash |= 0;
+  }
+  return hash.toString();
+};
 
 const generateRandomString = () => {
   return Math.floor((1 + Math.random()) * 0x1000000).toString(16).substring(1);
@@ -76,14 +79,18 @@ app.post('/register', (req, res) => {
       }
 
       if (!userExists) {
-        res.cookie('username', req.body.username);
+        const userID = Math.floor(Math.random() * 10000);
+        res.cookie('user_id', userID);
         //res.cookie('password', req.body.password);
         templateVars.username = req.body.username;
-        templateVars.password = req.body.username;
-        content[req.body.username] = { 'id': Math.floor(Math.random() * 10000), 'username': req.body.username, 'password': req.body.password, 'urls': {}};
+        bcrypt.hash(req.body.password, 10, (err, hash) => {
+          templateVars.password = hash;
 
-        writeDatabase(content).then(() => {
-          res.redirect('/urls');
+          content[req.body.username] = { 'id': userID, 'username': req.body.username, 'password': hash, 'urls': {}};
+
+          writeDatabase(content).then(() => {
+            res.redirect('/urls');
+          });
         });
       } else {
         res.status(403);
@@ -108,19 +115,21 @@ app.post('/login', (req, res) => {
     res.send('Please enter a valid email or password');
   } else {
     getDatabase().then((content) => {
-      if (req.body.password === content[req.body.username].password) {
-        res.cookie('user_id', content[req.body.username].id);
-        //res.cookie('password', req.body.password);
-        templateVars.username = req.body.username;
-        templateVars.password = req.body.password;
-
-        urlDB = content[templateVars.username].urls;
-        res.redirect('/urls');
-      } else {
-        console.log(`Incorrect login!\n${req.body.password} !== ${content[req.body.username].password}`);
-        res.status(403);
-        res.redirect('/login');
-      }
+      bcrypt.compare(req.body.password, content[req.body.username].password, (err, result) => {
+        if (result) {
+          res.cookie('user_id', content[req.body.username].id);
+          //res.cookie('password', req.body.password);
+          templateVars.username = req.body.username;
+          templateVars.password = content[req.body.username].password;
+  
+          urlDB = content[templateVars.username].urls;
+          res.redirect('/urls');
+        } else {
+          console.log(`Incorrect login!\n${hashString(req.body.password)} !== ${content[req.body.username].password}`);
+          res.status(403);
+          res.redirect('/login');
+        }
+      });
     });
   }
 });

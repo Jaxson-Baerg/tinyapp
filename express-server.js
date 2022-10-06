@@ -1,23 +1,35 @@
+/* --- 
+  Imports from libraries to handle server comm(express), password hashing(bcrypt),
+  cookie encrypting(cookie-session), and file reading and writing(fs)
+--- */
 const express = require('express');
 const bcrypt = require('bcrypt');
+const cookieSession = require('cookie-session');
 const morgan = require('morgan');
 const fs = require('fs');
 
+/* --- Initialize server variables --- */
 const app = express();
 const PORT = 8080; // default port 8080
 
+/* --- Setup server-side options --- */
 app.set('view engine', 'ejs');
 app.use("/public/images", express.static('public/images'));
 app.use(express.urlencoded({ extended: true}));
+app.use(cookieSession({
+  name: 'session',
+  keys: ['key1']
+}));
 
+/* --- Initialize variables to be sent to html/ejs files --- */
 let urlDB;
-
 const templateVars = {
   urlDB,
   username: "default",
   password: "default",
 };
 
+/* --- Helper function to read from database file --- */
 const getDatabase = () => {
   return new Promise((resolve, reject) => {
     fs.readFile('./users/database.txt', (error, body) => {
@@ -25,10 +37,8 @@ const getDatabase = () => {
     });
   });
 };
-getDatabase().then((content) => {
-  urlDB = content;
-});
 
+/* --- Helper function to write to database file --- */
 const writeDatabase = (obj) => {
   return new Promise((resolve, reject) => {
     fs.writeFile('./users/database.txt', JSON.stringify(obj), (error) => {
@@ -37,26 +47,17 @@ const writeDatabase = (obj) => {
   });
 };
 
-const hashString = (str) => {
-  let hash = 0,
-    i, char;
-  if (str.length === 0) return hash;
-  for (i = 0; i < str.length; i++) {
-    char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash |= 0;
-  }
-  return hash.toString();
-};
-
+/* --- Helper function to generate string for short urls --- */
 const generateRandomString = () => {
   return Math.floor((1 + Math.random()) * 0x1000000).toString(16).substring(1);
 }
 
+/* --- Render home page when requesting '/' --- */
 app.get('/', (req, res) => {
   res.render('pages/index', templateVars);
 });
 
+/* --- Render register page unless user is already logged in --- */
 app.get('/register', (req, res) => {
   if (templateVars.username === "default") {
     res.render('pages/register', templateVars);
@@ -65,12 +66,13 @@ app.get('/register', (req, res) => {
   }
 });
 
+/* --- Write registered user to database --- */
 app.post('/register', (req, res) => {
   if (req.body.username === "" || req.body.password === "") {
     res.status(400);
     res.send('Please enter a valid email or password.');
   } else {
-    getDatabase().then((content) => {
+    getDatabase().then((content) => { // First read database, then register new user onto data from file
       let userExists = false;
       for (let user in content) {
         if (content[user].username === req.body.username) {
@@ -78,17 +80,16 @@ app.post('/register', (req, res) => {
         }
       }
 
-      if (!userExists) {
+      if (!userExists) { // Double check if the user already exists on the database
         const userID = Math.floor(Math.random() * 10000);
-        res.cookie('user_id', userID);
-        //res.cookie('password', req.body.password);
+        req.session.user_id = userID;
         templateVars.username = req.body.username;
-        bcrypt.hash(req.body.password, 10, (err, hash) => {
+        bcrypt.hash(req.body.password, 10, (err, hash) => { // Hash registered password before recording it ever
           templateVars.password = hash;
 
-          content[req.body.username] = { 'id': userID, 'username': req.body.username, 'password': hash, 'urls': {}};
+          content[req.body.username] = { 'id': userID, 'username': req.body.username, 'password': hash, 'urls': {}}; // Create new user on file database
 
-          writeDatabase(content).then(() => {
+          writeDatabase(content).then(() => { // Write new database object back to file
             res.redirect('/urls');
           });
         });
@@ -101,6 +102,7 @@ app.post('/register', (req, res) => {
   }
 });
 
+/* --- Render login page if user isn't logged in --- */
 app.get('/login', (req, res) => {
   if (templateVars.username === "default") {
     res.render('pages/login', templateVars);
@@ -109,16 +111,16 @@ app.get('/login', (req, res) => {
   }
 });
 
+/* --- Set variables to send to render pages from user inputted login form --- */
 app.post('/login', (req, res) => {
   if (req.body.username === "" || req.body.password === "") {
     res.status(400);
     res.send('Please enter a valid email or password');
   } else {
     getDatabase().then((content) => {
-      bcrypt.compare(req.body.password, content[req.body.username].password, (err, result) => {
+      bcrypt.compare(req.body.password, content[req.body.username].password, (err, result) => { // Compare entered password to hashed password on file
         if (result) {
-          res.cookie('user_id', content[req.body.username].id);
-          //res.cookie('password', req.body.password);
+          req.session.user_id = content[req.body.username].id;
           templateVars.username = req.body.username;
           templateVars.password = content[req.body.username].password;
   
@@ -134,18 +136,20 @@ app.post('/login', (req, res) => {
   }
 });
 
+/* --- Remove user variables from the object that is passed into our renderings --- */
 app.get('/logout', (req, res) => {
-  res.clearCookie('user_id');
-  //res.clearCookie('password');
+  req.session.user_id = "0";
   templateVars.username = "default";
   templateVars.password = "default";
   res.redirect('/');
 });
 
+/* --- Render the about page when /about is requested --- */
 app.get('/about', (req, res) => {
   res.render('pages/about', templateVars);
 });
 
+/* --- Render the urls of the specific user. If not logged in, renders the urls of the default account --- */
 app.get('/urls', (req, res) => {
   getDatabase().then((content) => {
     urlDB = content[templateVars.username].urls;
@@ -154,11 +158,11 @@ app.get('/urls', (req, res) => {
   });
 });
 
+/* --- Creates a new short url and adds it to the users url list when the create short url form is submitted and post request sent --- */
 app.post('/urls', (req, res) => {
   getDatabase().then((content) => {
-    // templateVars.username === "default" ? urlDB = content.default.urls : urlDB = content[templateVars.username].urls;
     urlDB = content[templateVars.username].urls;
-    urlDB[generateRandomString()] = req.body.longURL;
+    urlDB[generateRandomString()] = req.body.longURL; // Generate random short url and assign it as a key with value of the long url
     content[templateVars.username].urls = urlDB;
 
     writeDatabase(content).then(() => {
@@ -167,6 +171,7 @@ app.post('/urls', (req, res) => {
   });
 });
 
+/* --- Removes a short url data pair when the delete button is clicked and the post request sent --- */
 app.post('/urls/:id/delete', (req, res) => {
   getDatabase().then((content) => {
     delete content[templateVars.username].urls[req.params.id];
@@ -177,10 +182,12 @@ app.post('/urls/:id/delete', (req, res) => {
   });
 });
 
+/* --- Renders the new url form page when the /urls/new request is sent from clicking the new url button --- */
 app.get('/urls/new', (req, res) => {
   res.render('pages/url_new', templateVars);
 });
 
+/* --- Renders the single short url page based on the id requested in /urls/:id --- */
 app.get('/urls/:id', (req, res) => {
   const param = req.params.id;
   getDatabase().then((content) => {
@@ -191,13 +198,14 @@ app.get('/urls/:id', (req, res) => {
   });
 });
 
+/* --- When /urls/:id is requested with POST, update an already created short url with the new long url passed in through the form --- */
 app.post('/urls/:id', (req, res) => {
   const param = req.params.id;
   const urlParam = req.body.newURLLong;
   getDatabase().then((content) => {
     urlDB = content[templateVars.username].urls;
     urlDB[param] = urlParam;
-    content[templateVars.username].urls = urlDB;
+    content[templateVars.username].urls = urlDB; // Modify users url list object, then shove it back into the database
     writeDatabase(content).then(() => {
       templateVars.urlDB = urlDB;
       templateVars.param = param;
@@ -206,11 +214,11 @@ app.post('/urls/:id', (req, res) => {
   });
 });
 
+/* --- Redirects to the long url value pair of key of id passed into GET of /u/:id --- */
 app.get('/u/:id', (req, res) => {
   getDatabase().then((content) => {
-    // urlDB = content[templateVars.username].urls;
     let idExists = true;
-    for (user in content) {
+    for (user in content) { // Ensure any user can directly access any short url
       if (content[user].urls[req.params.id]) {
         res.redirect(content[user].urls[req.params.id]);
         idExists = true;
@@ -226,6 +234,7 @@ app.get('/u/:id', (req, res) => {
   });
 });
 
+/* --- Enable server to listen at PORT variable for client requests --- */
 app.listen(PORT, () => {
   console.log(`Tiny App Server listening on port ${PORT}!`);
   getDatabase().then((content) => {

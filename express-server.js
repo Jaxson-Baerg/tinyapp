@@ -272,7 +272,6 @@ app.get('/u/:id', (req, res) => {
       } else {
         idExists = false;
       }
-      console.log(idList.includes(req.params.id));
     }
 
     if (!idExists) {

@@ -211,6 +211,7 @@ app.get('/urls/:id', (req, res) => {
     templateVars.param = param;
     if (!analytics[param]) {
       analytics[param] = {};
+      analytics[param].created = new Date();
       analytics[param].numVisits = 0;
       analytics[param].uniqueVisits = 0;
       analytics[param].uniqueVisitors = [];

@@ -14,20 +14,16 @@
 <main>
   <div class="jumbotron">
     <h2>Sign Up</h2>
-    <form action="/register" method="POST">
-      <div>
-        <div>
-          <label for="emailInput">Email</label>
-          <div>
-            <input type="email" id="emailInput" name="username" placeholder="example@address.com">
-          </div>
-        </div>
-        <div>
-          <label for="passwordInput">Password</label>
-          <div>
-            <input type="password" id="passwordInput" name="password">
-          </div>
-        </div>
+    <form action="/register" method="POST" class="needs-validation" novalidate>
+      <div class="form-group">
+        <label for="emailInput">Email</label>
+        <input class="form-control" type="email" id="emailInput" name="username" placeholder="example@address.com" required>
+        <div class="invalid-feedback">Please a valid email address.</div>
+      </div>
+      <div class="form-group">
+        <label for="passwordInput">Password</label>
+        <input class="form-control" type="password" id="passwordInput" name="password" required>
+        <div class="invalid-feedback">Please fill out this field.</div>
       </div>
       <button type="submit" class="btn btn-primary" style="margin: 15px;">Sign Up</button>
     </form>
@@ -38,5 +34,25 @@
   <%- include('../partials/footer'); %>
 </footer>
 
+<script>
+  // Disable form submissions if there are invalid fields
+  (() => {
+    'use strict';
+    window.addEventListener('load', () => {
+      // Get the forms we want to add validation styles to
+      var forms = document.getElementsByClassName('needs-validation');
+      // Loop over them and prevent submission
+      var validation = Array.prototype.filter.call(forms, function(form) {
+        form.addEventListener('submit', (event) => {
+          if (form.checkValidity() === false) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+          form.classList.add('was-validated');
+        }, false);
+      });
+    }, false);
+  })();
+</script>
 </body>
 </html>

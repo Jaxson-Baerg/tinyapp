@@ -5,7 +5,6 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const cookieSession = require('cookie-session');
-const morgan = require('morgan');
 const fs = require('fs');
 
 /* --- Initialize server variables --- */
@@ -114,8 +113,7 @@ app.get('/login', (req, res) => {
 /* --- Set variables to send to render pages from user inputted login form --- */
 app.post('/login', (req, res) => {
   if (req.body.username === "" || req.body.password === "") {
-    res.status(400);
-    res.send('Please enter a valid email or password');
+    res.status(400).redirect('/login');
   } else {
     getDatabase().then((content) => {
       bcrypt.compare(req.body.password, content[req.body.username].password, (err, result) => { // Compare entered password to hashed password on file
@@ -127,9 +125,7 @@ app.post('/login', (req, res) => {
           urlDB = content[templateVars.username].urls;
           res.redirect('/urls');
         } else {
-          console.log(`Incorrect login!\n${hashString(req.body.password)} !== ${content[req.body.username].password}`);
-          res.status(403);
-          res.redirect('/login');
+          res.status(403).redirect('/login');
         }
       });
     });

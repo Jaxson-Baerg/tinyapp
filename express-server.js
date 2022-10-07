@@ -36,6 +36,7 @@ const templateVars = {
   username: "default",
   password: "default",
 };
+const analytics = {};
 
 /* --- Helper function to read from database file --- */
 const getDatabase = (userID) => {
@@ -102,8 +103,7 @@ app.post('/register', (req, res) => {
       });
     } else {
       res.status(400);
-      templateVars["error"] = res.statusCode;
-      res.render('pages/error', templateVars);
+      res.render('pages/error', { "error": res.statusCode });
     }
   });
 });
@@ -143,8 +143,7 @@ app.post('/login', (req, res) => {
           res.redirect('/urls');
         } else {
           res.status(401);
-          templateVars["error"] = res.statusCode;
-          res.render('pages/error', templateVars);
+          res.render('pages/error', { "error": res.statusCode });
         }
       });
     }
@@ -210,6 +209,14 @@ app.get('/urls/:id', (req, res) => {
     urlDB = content[templateVars.user_id].urls;
     templateVars.urlDB = urlDB;
     templateVars.param = param;
+    if (!analytics[param]) {
+      analytics[param] = {};
+      analytics[param].numVisits = 0;
+      analytics[param].uniqueVisits = 0;
+      analytics[param].uniqueVisitors = [];
+      analytics[param].visits = [];
+    }
+    templateVars.ana = analytics;
     res.render('pages/url_id', templateVars);
   });
 });
@@ -225,7 +232,7 @@ app.put('/urls/:id', (req, res) => {
     writeDatabase(content).then(() => {
       templateVars.urlDB = urlDB;
       templateVars.param = param;
-      res.render('pages/url_id', templateVars);
+      res.redirect(`/urls/${param}`);
     });
   });
 });
@@ -235,13 +242,36 @@ app.get('/u/:id', (req, res) => {
   getDatabase().then((content) => {
     let idExists = true;
     for (user in content) { // Ensure any user can directly access any short url
-      if (content[user].urls[req.params.id]) {
+      idList = Object.keys(content[user].urls);
+      if (idList.includes(req.params.id)) {
+        if (!analytics[req.params.id]) {
+          analytics[req.params.id] = {};
+        }
+        !analytics[req.params.id].numVisits ? analytics[req.params.id].numVisits = 1 : analytics[req.params.id].numVisits++;
+        
+        let uniV = true;
+        if (!analytics[req.params.id].uniqueVisitors) {
+          analytics[req.params.id].uniqueVisitors = [];
+        }
+        for (let user of analytics[req.params.id].uniqueVisitors) {
+          if (templateVars.user_id === user) {
+            uniV = false;
+          }
+        }
+
+        if (uniV) {
+          !analytics[req.params.id].uniqueVisits ? analytics[req.params.id].uniqueVisits = 1 : analytics[req.params.id].uniqueVisits++;
+          !analytics[req.params.id].uniqueVisitors ? analytics[req.params.id].uniqueVisitors = templateVars.user_id : analytics[req.params.id].uniqueVisitors.push(templateVars.user_id);
+        }
+        !analytics[req.params.id].visits ? analytics[req.params.id].visits = [{time: new Date(), user: templateVars.user_id}] : analytics[req.params.id].visits.push({ time: new Date(), user: templateVars.user_id });
+        
         res.redirect(content[user].urls[req.params.id]);
         idExists = true;
         break;
       } else {
         idExists = false;
       }
+      console.log(idList.includes(req.params.id));
     }
 
     if (!idExists) {

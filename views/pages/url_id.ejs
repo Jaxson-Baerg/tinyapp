@@ -12,18 +12,59 @@
 <main>
   <div class="jumbotron">
     <h1>Single URL</h1>
-    <p>
+    <div>
       Your shortened URL for --> 
       <strong id="urlLong"><%= urlDB[param] %></strong>
       <button id="urlLongEditButton" onclick="editURL()" class="btn" style="padding: 0; margin: 10px;">
-        <i class="fa fa-pen-to-square"></i>
+        <i class="fa fa-pen-to-square" style="margin: 0;"></i>
       </button>
       <form id="urlLongEdit" action=<%- `/urls/${param}?_method=PUT` %> method="POST" hidden>
         <input name="newURLLong" value=<%- urlDB[param] %> size="35" maxlength="35">
         <button type="submit"class="btn bg-success">Update</button>
       </form>
-    </p>
-    <a href=<%- urlDB[param] %>><strong><%= param %></strong></a>
+    </div>
+    <form action=<%- `/u/${param}` %> method="GET">
+      <button type="submit" style="background: none; border: none; padding: 0; color: #069; text-decoration: underline; cursor: pointer;"><%= param %></button>
+    </form>
+
+    <div style="padding-top: 30px;">
+      <h3>Link Analytics</h3>
+      <table class="table table-dark">
+        <thead>
+          <tr>
+            <th scope="col"># of Total Visits</th>
+            <th scope="col"># of Unique Visits</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><%= ana[param].numVisits %></td>
+            <td><%= ana[param].uniqueVisits %></td>
+          </tr>
+        </tbody>
+      </table>
+      <% if (ana[param].visits.length > 0) { %>
+        <h5>Recorded Visits</h5>
+        <table class="table table-dark">
+          <thead>
+            <tr>
+              <th scope="col">Timestamp</th>
+              <th scope="col">User ID</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% for (let v of ana[param].visits) { %>
+              <tr>
+                <td><%= v.time %></td>
+                <td><%= v.user %></td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
+      <% } else { %>
+        <h5>No Recorded Visits</h5>
+      <% } %>
+    </div>
   </div>
 </main>
 

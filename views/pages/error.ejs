@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <%- include('../partials/head'); %>
+</head>
+<body class="container">
+
+<header>
+  <%- include('../partials/header'); %>
+</header>
+
+<main>
+  <div class="jumbotron" style="padding: 0; display: flex;">
+    <img style="flex-wrap: wrap;" src="/public/images/gandalf-angry.png">
+    <div style="padding: 5%;">
+      <h1>Error Status: <%= error %></h1>
+      <% if (error === 400) { %>
+        <div>
+          <p style="font-size: 25px;">The email entered already has an account associated!<br>Please login to access your saved urls!</p>
+        </div>
+      <% } else if (error === 401) { %>
+        <div>
+          <h3>YOU SHALL NOT PASS!!!</h3>
+          <p style="font-size: 25px;">The entered password is incorrect!<br>Please try again!</p>
+        </div>
+      <% } else if (error === 404) { %>
+        <div>
+          <p style="font-size: 25px">The entered email has no account associated yet!<br>Please register to create an account!</p>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <%- include('../partials/footer'); %>
+</footer>
+
+</body>
+</html>

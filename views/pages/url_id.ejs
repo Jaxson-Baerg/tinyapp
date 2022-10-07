@@ -18,7 +18,7 @@
       <button id="urlLongEditButton" onclick="editURL()" class="btn" style="padding: 0; margin: 10px;">
         <i class="fa fa-pen-to-square"></i>
       </button>
-      <form id="urlLongEdit" action=<%- `/urls/${param}` %> method="POST" hidden>
+      <form id="urlLongEdit" action=<%- `/urls/${param}?_method=PUT` %> method="POST" hidden>
         <input name="newURLLong" value=<%- urlDB[param] %> size="35" maxlength="35">
         <button type="submit"class="btn bg-success">Update</button>
       </form>

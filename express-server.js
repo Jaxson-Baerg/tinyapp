@@ -5,6 +5,7 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const cookieSession = require('cookie-session');
+const methodOverride = require('method-override');
 const fs = require('fs');
 
 /* --- Initialize server variables --- */
@@ -19,6 +20,13 @@ app.use(cookieSession({
   name: 'session',
   keys: ['key1']
 }));
+app.use(methodOverride('_method'));
+
+// const xhr = new XMLHttpRequest();
+// xhr.onload = onload;
+// xhr.open('post', '/urls/:id/delete', true);
+// xhr.setRequestHeader('X-HTTP-Method-Override', "DELETE");
+// xhr.send();
 
 /* --- Initialize variables to be sent to html/ejs files --- */
 let urlDB;
@@ -93,8 +101,9 @@ app.post('/register', (req, res) => {
         });
       });
     } else {
-      console.log(`User already exists!\n${req.body.username}`);
-      res.status(403).redirect('/register');
+      res.status(400);
+      templateVars["error"] = res.statusCode;
+      res.render('pages/error', templateVars);
     }
   });
 });
@@ -118,19 +127,27 @@ app.post('/login', (req, res) => {
         break;
       }
     }
-    bcrypt.compare(req.body.password, content[tempID].password, (err, result) => { // Compare entered password to hashed password on file
-      if (result) {
-        req.session.user_id = tempID;
-        templateVars.user_id = tempID;
-        templateVars.username = req.body.username;
-        templateVars.password = content[templateVars.user_id].password;
+    if (!tempID) {
+      res.status(404);
+      templateVars["error"] = res.statusCode;
+      res.render('pages/error', templateVars);
+    } else {
+      bcrypt.compare(req.body.password, content[tempID].password, (err, result) => { // Compare entered password to hashed password on file
+        if (result) {
+          req.session.user_id = tempID;
+          templateVars.user_id = tempID;
+          templateVars.username = req.body.username;
+          templateVars.password = content[templateVars.user_id].password;
   
-        urlDB = content[templateVars.user_id].urls;
-        res.redirect('/urls');
-      } else {
-        res.status(403).redirect('/login');
-      }
-    });
+          urlDB = content[templateVars.user_id].urls;
+          res.redirect('/urls');
+        } else {
+          res.status(401);
+          templateVars["error"] = res.statusCode;
+          res.render('pages/error', templateVars);
+        }
+      });
+    }
   });
 });
 
@@ -171,7 +188,7 @@ app.post('/urls', (req, res) => {
 });
 
 /* --- Removes a short url data pair when the delete button is clicked and the post request sent --- */
-app.post('/urls/:id/delete', (req, res) => {
+app.delete('/urls/:id/delete', (req, res) => {
   getDatabase().then((content) => {
     delete content[templateVars.user_id].urls[req.params.id];
 
@@ -198,7 +215,7 @@ app.get('/urls/:id', (req, res) => {
 });
 
 /* --- When /urls/:id is requested with POST, update an already created short url with the new long url passed in through the form --- */
-app.post('/urls/:id', (req, res) => {
+app.put('/urls/:id', (req, res) => {
   const param = req.params.id;
   const urlParam = req.body.newURLLong;
   getDatabase().then((content) => {

@@ -11,22 +11,26 @@
 </header>
 
 <main>
-  <div class="jumbotron">
-    <h3>Create Tiny URL</h3>
-    <form id="newURL" class="form-inline" action="/urls" method="POST">
-      <div class="form-group mb-2">
-        <label for="longURL">Enter a URL:</label>
-        <input
-          id="inputNewURL"
-          class="form-control"
-          type="text"
-          name="longURL"
-          placeholder="http://..."
-          style="width: 300px; margin: 1em"
-        />
-        <button type="submit" class="btn btn-primary">Submit</button>
-      </div>
-    </form>
+  <div class="jumbotron" style="padding-top: 32px; padding-bottom: 0; display: flex;">
+    <div style="margin-top: 50px;">
+      <h3>Create Tiny URL</h3>
+      <form id="newURL" class="form-inline" action="/urls" method="POST">
+        <div class="form-group mb-2">
+          <label for="longURL">Enter a URL:</label>
+          <input
+            id="inputNewURL"
+            class="form-control"
+            type="text"
+            name="longURL"
+            placeholder="http://..."
+            style="width: 300px; margin: 1em"
+            required
+          />
+          <button type="submit" class="btn btn-primary">Submit</button>
+        </div>
+      </form>
+    </div>
+    <img src="/public/images/gandalf-magic.png" height="300" width="400" style="flex-wrap: wrap;">
   </div>
 </main>
 

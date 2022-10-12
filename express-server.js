@@ -6,7 +6,6 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const cookieSession = require('cookie-session');
 const methodOverride = require('method-override');
-const fs = require('fs');
 
 /* --- Initialize server variables --- */
 const app = express();
@@ -22,12 +21,6 @@ app.use(cookieSession({
 }));
 app.use(methodOverride('_method'));
 
-// const xhr = new XMLHttpRequest();
-// xhr.onload = onload;
-// xhr.open('post', '/urls/:id/delete', true);
-// xhr.setRequestHeader('X-HTTP-Method-Override', "DELETE");
-// xhr.send();
-
 /* --- Initialize variables to be sent to html/ejs files --- */
 let urlDB;
 const templateVars = {
@@ -38,30 +31,8 @@ const templateVars = {
 };
 const analytics = {};
 
-/* --- Helper function to read from database file --- */
-const getDatabase = (userID) => {
-  return new Promise((resolve, reject) => {
-    fs.readFile('./users/database.txt', (error, body) => {
-      if (userID) resolve(JSON.parse(body).userID);
-      resolve(JSON.parse(body));
-    });
-  });
-};
-
-/* --- Helper function to write to database file --- */
-const writeDatabase = (obj) => {
-  return new Promise((resolve, reject) => {
-    fs.writeFile('./users/database.txt', JSON.stringify(obj), (error) => {
-      if (!error) resolve();
-      reject();
-    });
-  });
-};
-
-/* --- Helper function to generate string for short urls --- */
-const generateRandomString = () => {
-  return Math.floor((1 + Math.random()) * 0x1000000).toString(16).substring(1);
-}
+/* --- Import the helper functions used throughout the server --- */
+const _ = require('./scripts/helper.js');
 
 /* --- Render home page when requesting '/' --- */
 app.get('/', (req, res) => {
@@ -79,7 +50,7 @@ app.get('/register', (req, res) => {
 
 /* --- Write registered user to database --- */
 app.post('/register', (req, res) => {
-  getDatabase().then((content) => { // First read database, then register new user onto data from file
+  _.getDatabase().then((content) => { // First read database, then register new user onto data from file
     let userExists = false;
     for (let user in content) {
       if (content[user].username === req.body.username) {
@@ -97,13 +68,14 @@ app.post('/register', (req, res) => {
 
         content[userID] = { 'id': userID, 'username': req.body.username, 'password': hash, 'urls': {}}; // Create new user on file database
 
-        writeDatabase(content).then(() => { // Write new database object back to file
+        _.writeDatabase(content).then(() => { // Write new database object back to file
           res.redirect('/urls');
         });
       });
     } else {
       res.status(400);
-      res.render('pages/error', { "error": res.statusCode });
+      templateVars["error"] = res.statusCode;
+      res.render('pages/error', templateVars);
     }
   });
 });
@@ -119,7 +91,7 @@ app.get('/login', (req, res) => {
 
 /* --- Set variables to send to render pages from user inputted login form --- */
 app.post('/login', (req, res) => {
-  getDatabase().then((content) => {
+  _.getDatabase().then((content) => {
     let tempID;
     for (let uid in content) {
       if (content[uid].username === req.body.username) {
@@ -128,7 +100,7 @@ app.post('/login', (req, res) => {
       }
     }
     if (!tempID) {
-      res.status(404);
+      res.status(409);
       templateVars["error"] = res.statusCode;
       res.render('pages/error', templateVars);
     } else {
@@ -143,7 +115,8 @@ app.post('/login', (req, res) => {
           res.redirect('/urls');
         } else {
           res.status(401);
-          res.render('pages/error', { "error": res.statusCode });
+          templateVars["error"] = res.statusCode;
+          res.render('pages/error', templateVars);
         }
       });
     }
@@ -152,7 +125,7 @@ app.post('/login', (req, res) => {
 
 /* --- Remove user variables from the object that is passed into our renderings --- */
 app.get('/logout', (req, res) => {
-  req.session.user_id = "0";
+  req.session = null;
   templateVars.user_id = "0";
   templateVars.username = "default";
   templateVars.password = "default";
@@ -166,32 +139,43 @@ app.get('/about', (req, res) => {
 
 /* --- Render the urls of the specific user. If not logged in, renders the urls of the default account --- */
 app.get('/urls', (req, res) => {
-  getDatabase().then((content) => {
-    urlDB = content[templateVars.user_id].urls;
-    templateVars.urlDB = urlDB;
-    res.render('pages/urls', templateVars);
-  });
+  if (templateVars.user_id === '0') {
+    res.redirect('/login');
+  } else {
+    _.getDatabase().then((content) => {
+      urlDB = content[templateVars.user_id].urls;
+      templateVars.urlDB = urlDB;
+      res.render('pages/urls', templateVars);
+    });
+  }
 });
 
 /* --- Creates a new short url and adds it to the users url list when the create short url form is submitted and post request sent --- */
 app.post('/urls', (req, res) => {
-  getDatabase().then((content) => {
-    urlDB = content[templateVars.user_id].urls;
-    urlDB[generateRandomString()] = req.body.longURL; // Generate random short url and assign it as a key with value of the long url
-    content[templateVars.user_id].urls = urlDB;
+  if (templateVars.user_id === '0') {
+    res.status(403);
+    templateVars["error"] = res.statusCode;
+    res.render('pages/error', templateVars);
+  } else {
+    _.getDatabase().then((content) => {
+      const shortID = _.generateRandomString()
+      urlDB = content[templateVars.user_id].urls;
+      urlDB[shortID] = req.body.longURL; // Generate random short url and assign it as a key with value of the long url
+      content[templateVars.user_id].urls = urlDB;
 
-    writeDatabase(content).then(() => {
-      res.redirect('/urls');
+      _.writeDatabase(content).then(() => {
+        res.redirect(`/urls/${shortID}`);
+      });
     });
-  });
+  }
 });
 
 /* --- Removes a short url data pair when the delete button is clicked and the post request sent --- */
 app.delete('/urls/:id/delete', (req, res) => {
-  getDatabase().then((content) => {
+  _.getDatabase().then((content) => {
     delete content[templateVars.user_id].urls[req.params.id];
 
-    writeDatabase(content).then(() => {
+    _.writeDatabase(content).then(() => {
       res.redirect('/urls');
     });
   });
@@ -199,26 +183,45 @@ app.delete('/urls/:id/delete', (req, res) => {
 
 /* --- Renders the new url form page when the /urls/new request is sent from clicking the new url button --- */
 app.get('/urls/new', (req, res) => {
-  res.render('pages/url_new', templateVars);
+  if (templateVars.user_id === '0') {
+    res.redirect('/login');
+  } else {
+    res.render('pages/url_new', templateVars);
+  }
 });
 
 /* --- Renders the single short url page based on the id requested in /urls/:id --- */
 app.get('/urls/:id', (req, res) => {
   const param = req.params.id;
-  getDatabase().then((content) => {
-    urlDB = content[templateVars.user_id].urls;
-    templateVars.urlDB = urlDB;
-    templateVars.param = param;
-    if (!analytics[param]) {
-      analytics[param] = {};
-      analytics[param].created = new Date();
-      analytics[param].numVisits = 0;
-      analytics[param].uniqueVisits = 0;
-      analytics[param].uniqueVisitors = [];
-      analytics[param].visits = [];
+  _.getDatabase().then((content) => {
+    let idExists = true;
+    for (user in content) {
+      idList = Object.keys(content[user].urls);
+      if (idList.includes(param)) {
+        urlDB = content[templateVars.user_id].urls;
+        templateVars.urlDB = urlDB;
+        templateVars.param = param;
+        if (!analytics[param]) {
+          analytics[param] = {};
+          analytics[param].created = new Date();
+          analytics[param].numVisits = 0;
+          analytics[param].uniqueVisits = 0;
+          analytics[param].uniqueVisitors = [];
+          analytics[param].visits = [];
+        }
+        templateVars.ana = analytics;
+        res.render('pages/url_id', templateVars);
+        idExists = true;
+        break
+      } else {
+        idExists = false;
+      }
     }
-    templateVars.ana = analytics;
-    res.render('pages/url_id', templateVars);
+    if (!idExists) {
+      res.status(404);
+      templateVars["error"] = res.statusCode;
+      res.render('pages/error', templateVars);
+    }
   });
 });
 
@@ -226,21 +229,21 @@ app.get('/urls/:id', (req, res) => {
 app.put('/urls/:id', (req, res) => {
   const param = req.params.id;
   const urlParam = req.body.newURLLong;
-  getDatabase().then((content) => {
+  _.getDatabase().then((content) => {
     urlDB = content[templateVars.user_id].urls;
     urlDB[param] = urlParam;
     content[templateVars.user_id].urls = urlDB; // Modify users url list object, then shove it back into the database
-    writeDatabase(content).then(() => {
+    _.writeDatabase(content).then(() => {
       templateVars.urlDB = urlDB;
       templateVars.param = param;
-      res.redirect(`/urls/${param}`);
+      res.redirect(`/urls/`);
     });
   });
 });
 
 /* --- Redirects to the long url value pair of key of id passed into GET of /u/:id --- */
 app.get('/u/:id', (req, res) => {
-  getDatabase().then((content) => {
+  _.getDatabase().then((content) => {
     let idExists = true;
     for (user in content) { // Ensure any user can directly access any short url
       idList = Object.keys(content[user].urls);
@@ -275,7 +278,9 @@ app.get('/u/:id', (req, res) => {
     }
 
     if (!idExists) {
-      res.redirect('/urls');
+      res.status(404);
+      templateVars["error"] = res.statusCode;
+      res.render('pages/error', templateVars);
     }
   });
 });
@@ -283,8 +288,8 @@ app.get('/u/:id', (req, res) => {
 /* --- Enable server to listen at PORT variable for client requests --- */
 app.listen(PORT, () => {
   console.log(`Tiny App Server listening on port ${PORT}!`);
-  getDatabase().then((content) => {
+  _.getDatabase().then((content) => {
     content["0"].urls = { "vj3k2l": "https://www.google.ca" };
-    writeDatabase(content);
+    _.writeDatabase(content);
   });
 });

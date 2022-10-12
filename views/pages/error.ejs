@@ -23,9 +23,17 @@
           <h3>YOU SHALL NOT PASS!!!</h3>
           <p style="font-size: 25px;">The entered password is incorrect!<br>Please try again!</p>
         </div>
-      <% } else if (error === 404) { %>
+      <% } else if (error === 409) { %>
         <div>
           <p style="font-size: 25px">The entered email has no account associated yet!<br>Please register to create an account!</p>
+        </div>
+      <% } else if (error === 404) { %>
+        <div>
+          <p style="font-size: 25px">The requested url does not exist!<br>Please try another.</p>
+        </div>
+      <% } else if (error === 403) { %>
+        <div>
+          <p style="font-size: 25px">You are unauthorized for this access.<br>Please login.</p>
         </div>
       <% } %>
     </div>

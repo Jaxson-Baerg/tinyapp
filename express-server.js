@@ -164,7 +164,7 @@ app.post('/urls', (req, res) => {
     res.render('pages/error', templateVars);
   } else {
     _.getDatabase().then((content) => {
-      const shortID = _.generateRandomString();
+      const shortID = _.generateRandomString(content);
       if (!analytics[shortID]) {
         analytics[shortID] = {};
         analytics[shortID].created = new Date();
@@ -177,7 +177,7 @@ app.post('/urls', (req, res) => {
       urlDB = content[templateVars.user_id].urls;
       urlDB[shortID] = req.body.longURL; // Generate random short url and assign it as a key with value of the long url
       content[templateVars.user_id].urls = urlDB;
-
+      
       _.writeDatabase(content).then(() => {
         res.redirect(`/urls/${shortID}`);
       });

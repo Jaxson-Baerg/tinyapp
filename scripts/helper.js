@@ -21,8 +21,18 @@ const writeDatabase = (obj) => {
 };
 
 /* --- Helper function to generate string for short urls --- */
-const generateRandomString = () => {
-  return Math.floor((1 + Math.random()) * 0x1000000).toString(16).substring(1);
+const generateRandomString = (content) => {
+  let num = null;
+  while (!num) {
+    num = Math.floor((1 + Math.random()) * 0x1000000).toString(16).substring(1);
+    for (user in content) {
+      const idList = Object.keys(content[user].urls);
+      if (idList.includes(num)) {
+        num = null;
+      } 
+    }
+  }
+  return num;
 }
 
 module.exports = {

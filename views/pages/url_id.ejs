@@ -23,9 +23,7 @@
         <button type="submit"class="btn bg-success">Update</button>
       </form>
     </div>
-    <form action=<%- `/u/${param}` %> method="GET">
-      <button type="submit" style="background: none; border: none; padding: 0; color: #069; text-decoration: underline; cursor: pointer;"><%= param %></button>
-    </form>
+    <a href=<%- urlDB[param] %>><%= param %></a>
 
     <div style="padding-top: 30px;">
       <h3>Link Analytics</h3>

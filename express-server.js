@@ -41,7 +41,7 @@ app.get('/', (req, res) => {
 
 /* --- Render register page unless user is already logged in --- */
 app.get('/register', (req, res) => {
-  if (templateVars.username === "default") {
+  if (req.session.user_id !== templateVars.user_id) {
     res.render('pages/register', templateVars);
   } else {
     res.redirect('/urls');
@@ -56,6 +56,12 @@ app.post('/register', (req, res) => {
       if (content[user].username === req.body.username) {
         userExists = true;
       }
+    }
+    if (req.body.username === '' || req.body.password === '') {
+      res.status(405);
+      templateVars["error"] = res.statusCode;
+      res.render('pages/error', templateVars);
+      return;
     }
 
     if (!userExists) { // Double check if the user already exists on the database
@@ -82,7 +88,7 @@ app.post('/register', (req, res) => {
 
 /* --- Render login page if user isn't logged in --- */
 app.get('/login', (req, res) => {
-  if (templateVars.username === "default") {
+  if (req.session.user_id !== templateVars.user_id) {
     res.render('pages/login', templateVars);
   } else {
     res.redirect('/urls');
@@ -139,7 +145,7 @@ app.get('/about', (req, res) => {
 
 /* --- Render the urls of the specific user. If not logged in, renders the urls of the default account --- */
 app.get('/urls', (req, res) => {
-  if (templateVars.user_id === '0') {
+  if (req.session.user_id !== templateVars.user_id) {
     res.redirect('/login');
   } else {
     _.getDatabase().then((content) => {
@@ -152,13 +158,22 @@ app.get('/urls', (req, res) => {
 
 /* --- Creates a new short url and adds it to the users url list when the create short url form is submitted and post request sent --- */
 app.post('/urls', (req, res) => {
-  if (templateVars.user_id === '0') {
+  if (req.session.user_id !== templateVars.user_id) {
     res.status(403);
     templateVars["error"] = res.statusCode;
     res.render('pages/error', templateVars);
   } else {
     _.getDatabase().then((content) => {
-      const shortID = _.generateRandomString()
+      const shortID = _.generateRandomString();
+      if (!analytics[shortID]) {
+        analytics[shortID] = {};
+        analytics[shortID].created = new Date();
+        analytics[shortID].numVisits = 0;
+        analytics[shortID].uniqueVisits = 0;
+        analytics[shortID].uniqueVisitors = [];
+        analytics[shortID].visits = [];
+      }
+      templateVars.ana = analytics;
       urlDB = content[templateVars.user_id].urls;
       urlDB[shortID] = req.body.longURL; // Generate random short url and assign it as a key with value of the long url
       content[templateVars.user_id].urls = urlDB;
@@ -183,7 +198,7 @@ app.delete('/urls/:id/delete', (req, res) => {
 
 /* --- Renders the new url form page when the /urls/new request is sent from clicking the new url button --- */
 app.get('/urls/new', (req, res) => {
-  if (templateVars.user_id === '0') {
+  if (req.session.user_id !== templateVars.user_id) {
     res.redirect('/login');
   } else {
     res.render('pages/url_new', templateVars);
@@ -201,15 +216,6 @@ app.get('/urls/:id', (req, res) => {
         urlDB = content[templateVars.user_id].urls;
         templateVars.urlDB = urlDB;
         templateVars.param = param;
-        if (!analytics[param]) {
-          analytics[param] = {};
-          analytics[param].created = new Date();
-          analytics[param].numVisits = 0;
-          analytics[param].uniqueVisits = 0;
-          analytics[param].uniqueVisitors = [];
-          analytics[param].visits = [];
-        }
-        templateVars.ana = analytics;
         res.render('pages/url_id', templateVars);
         idExists = true;
         break
@@ -288,8 +294,4 @@ app.get('/u/:id', (req, res) => {
 /* --- Enable server to listen at PORT variable for client requests --- */
 app.listen(PORT, () => {
   console.log(`Tiny App Server listening on port ${PORT}!`);
-  _.getDatabase().then((content) => {
-    content["0"].urls = { "vj3k2l": "https://www.google.ca" };
-    _.writeDatabase(content);
-  });
 });

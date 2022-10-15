@@ -35,6 +35,10 @@
         <div>
           <p style="font-size: 25px">You are unauthorized for this access.<br>Please login.</p>
         </div>
+      <% } else if (error === 405) { %>
+        <div>
+          <p style="font-size: 25px">Please enter your email and password.</p>
+        </div>
       <% } %>
     </div>
   </div>

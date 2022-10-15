@@ -1,1 +1,1 @@
-{"0":{"id":"0","username":"default","password":"undefined","urls":{}},"1737":{"id":1737,"username":"a@b.com","password":"$2b$10$pKt7eSFFcyhrwQmAPcbiPe4/KCa3P5hBWG6o1wYck/F91il6vgqsK","urls":{"31d804":"https://www.google.ca/"}}}
+{"0":{"id":"0","username":"default","password":"undefined","urls":{}},"1737":{"id":1737,"username":"a@b.com","password":"$2b$10$pKt7eSFFcyhrwQmAPcbiPe4/KCa3P5hBWG6o1wYck/F91il6vgqsK","urls":{}}}
